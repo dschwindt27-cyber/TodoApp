@@ -149,41 +149,45 @@ public class TodoTest {
     // =====================================================
 
     private static void testIsSorted() {
-        check("empty array is sorted", Sorts.isSorted(new Task[0], "difficulty"));
+        TaskComparators.ByDifficulty byDiff = new TaskComparators.ByDifficulty();
+        TaskComparators.ByCompleted byComp = new TaskComparators.ByCompleted();
+        TaskComparators.ByDueTime byDue = new TaskComparators.ByDueTime();
+
+        check("empty array is sorted", Sorts.isSorted(new Task[0], byDiff));
 
         check("one task is sorted",
-                Sorts.isSorted(new Task[]{byDifficulty("a", "hard")}, "difficulty"));
+                Sorts.isSorted(new Task[]{byDifficulty("a", "hard")}, byDiff));
 
         Task[] sorted = {byDifficulty("a", "easy"), byDifficulty("b", "medium"), byDifficulty("c", "hard")};
-        check("true when sorted by difficulty", Sorts.isSorted(sorted, "difficulty"));
+        check("true when sorted by difficulty", Sorts.isSorted(sorted, byDiff));
 
         Task[] unsorted = {byDifficulty("a", "hard"), byDifficulty("b", "easy"), byDifficulty("c", "medium")};
-        check("false when not sorted by difficulty", !Sorts.isSorted(unsorted, "difficulty"));
+        check("false when not sorted by difficulty", !Sorts.isSorted(unsorted, byDiff));
 
         Task[] equalNeighbors = {byDifficulty("a", "easy"), byDifficulty("b", "easy"), byDifficulty("c", "hard")};
-        check("equal neighbors are allowed", Sorts.isSorted(equalNeighbors, "difficulty"));
+        check("equal neighbors are allowed", Sorts.isSorted(equalNeighbors, byDiff));
 
         Task[] badAtEnd = {byDifficulty("a", "easy"), byDifficulty("b", "medium"),
                 byDifficulty("c", "hard"), byDifficulty("d", "medium")};
-        check("catches a bad pair at the end", !Sorts.isSorted(badAtEnd, "difficulty"));
+        check("catches a bad pair at the end", !Sorts.isSorted(badAtEnd, byDiff));
 
         Task[] badAtStart = {byDifficulty("a", "medium"), byDifficulty("b", "easy"), byDifficulty("c", "hard")};
-        check("catches a bad pair at the start", !Sorts.isSorted(badAtStart, "difficulty"));
+        check("catches a bad pair at the start", !Sorts.isSorted(badAtStart, byDiff));
 
         check("true when sorted by completed",
-                Sorts.isSorted(new Task[]{byCompleted("a", false), byCompleted("b", true)}, "completed"));
+                Sorts.isSorted(new Task[]{byCompleted("a", false), byCompleted("b", true)}, byComp));
         check("false when not sorted by completed",
-                !Sorts.isSorted(new Task[]{byCompleted("a", true), byCompleted("b", false)}, "completed"));
+                !Sorts.isSorted(new Task[]{byCompleted("a", true), byCompleted("b", false)}, byComp));
 
         Task[] timeSorted = {byDueTime("a", 1, 5, 9), byDueTime("b", 1, 5, 10), byDueTime("c", 2, 1, 0)};
         Task[] timeUnsorted = {byDueTime("a", 2, 1, 0), byDueTime("b", 1, 5, 10), byDueTime("c", 1, 5, 9)};
-        check("true when sorted by dueTime", Sorts.isSorted(timeSorted, "dueTime"));
-        check("false when not sorted by dueTime", !Sorts.isSorted(timeUnsorted, "dueTime"));
+        check("true when sorted by dueTime", Sorts.isSorted(timeSorted, byDue));
+        check("false when not sorted by dueTime", !Sorts.isSorted(timeUnsorted, byDue));
 
         // Sorted by difficulty, but NOT by completed.
         Task[] mixed = {task("a", "easy", true, 1, 1, 0), task("b", "hard", false, 1, 1, 0)};
-        check("uses the field you ask for (difficulty)", Sorts.isSorted(mixed, "difficulty"));
-        check("uses the field you ask for (completed)", !Sorts.isSorted(mixed, "completed"));
+        check("uses the field you ask for (difficulty)", Sorts.isSorted(mixed, byDiff));
+        check("uses the field you ask for (completed)", !Sorts.isSorted(mixed, byComp));
     }
 
     // =====================================================
@@ -192,55 +196,59 @@ public class TodoTest {
     // =====================================================
 
     private static void testBubbleSort() {
+        TaskComparators.ByDifficulty byDiff = new TaskComparators.ByDifficulty();
+        TaskComparators.ByCompleted byComp = new TaskComparators.ByCompleted();
+        TaskComparators.ByDueTime byDue = new TaskComparators.ByDueTime();
+
         Task[] empty = new Task[0];
-        Sorts.bubbleSort(empty, "difficulty");
+        Sorts.bubbleSort(empty, byDiff);
         check("empty array does not crash", empty.length == 0);
 
         Task only = byDifficulty("only", "hard");
         Task[] one = {only};
-        Sorts.bubbleSort(one, "difficulty");
+        Sorts.bubbleSort(one, byDiff);
         check("one task stays put", sameOrder(one, only));
 
         Task easy = byDifficulty("easy", "easy");
         Task medium = byDifficulty("medium", "medium");
         Task hard = byDifficulty("hard", "hard");
         Task[] a = {hard, easy, medium};
-        Sorts.bubbleSort(a, "difficulty");
+        Sorts.bubbleSort(a, byDiff);
         check("sorts by difficulty", sameOrder(a, easy, medium, hard));
 
         Task t1 = byDifficulty("t1", "easy");
         Task t2 = byDifficulty("t2", "medium");
         Task t3 = byDifficulty("t3", "hard");
         Task[] reversed = {t3, t3, t2, t1, t1};
-        Sorts.bubbleSort(reversed, "difficulty");
+        Sorts.bubbleSort(reversed, byDiff);
         check("sorts reverse-order input", sameOrder(reversed, t1, t1, t2, t3, t3));
 
         Task e1 = byDifficulty("e1", "easy");
         Task e2 = byDifficulty("e2", "easy");
         Task h = byDifficulty("h", "hard");
         Task[] largest = {h, e1, e2};
-        Sorts.bubbleSort(largest, "difficulty");
+        Sorts.bubbleSort(largest, byDiff);
         check("largest task ends up last", largest[2] == h);
 
         Task s1 = byDifficulty("s1", "easy");
         Task s2 = byDifficulty("s2", "medium");
         Task s3 = byDifficulty("s3", "hard");
         Task[] already = {s1, s2, s3};
-        Sorts.bubbleSort(already, "difficulty");
+        Sorts.bubbleSort(already, byDiff);
         check("already sorted array stays the same", sameOrder(already, s1, s2, s3));
 
         Task first = byDifficulty("first", "medium");
         Task second = byDifficulty("second", "medium");
         Task low = byDifficulty("low", "easy");
         Task[] ties = {first, second, low};
-        Sorts.bubbleSort(ties, "difficulty");
+        Sorts.bubbleSort(ties, byDiff);
         check("equal tasks keep their original order", sameOrder(ties, low, first, second));
 
         Task n1 = byCompleted("n1", false);
         Task n2 = byCompleted("n2", false);
         Task d = byCompleted("d", true);
         Task[] byDone = {d, n1, n2};
-        Sorts.bubbleSort(byDone, "completed");
+        Sorts.bubbleSort(byDone, byComp);
         check("sorts by completed", sameOrder(byDone, n1, n2, d));
 
         Task jan = byDueTime("jan", 1, 20, 8);
@@ -248,16 +256,16 @@ public class TodoTest {
         Task febLater = byDueTime("febLater", 2, 1, 15);
         Task mar = byDueTime("mar", 3, 5, 0);
         Task[] byTime = {mar, febLater, jan, feb};
-        Sorts.bubbleSort(byTime, "dueTime");
+        Sorts.bubbleSort(byTime, byDue);
         check("sorts by dueTime", sameOrder(byTime, jan, feb, febLater, mar));
 
         Task x = task("x", "hard", false, 1, 1, 0);
         Task y = task("y", "easy", true, 1, 1, 0);
         Task[] fieldA = {x, y};
-        Sorts.bubbleSort(fieldA, "difficulty");
+        Sorts.bubbleSort(fieldA, byDiff);
         check("uses the field you ask for (difficulty: easy first)", sameOrder(fieldA, y, x));
         Task[] fieldB = {x, y};
-        Sorts.bubbleSort(fieldB, "completed");
+        Sorts.bubbleSort(fieldB, byComp);
         check("uses the field you ask for (completed: not done first)", sameOrder(fieldB, x, y));
     }
 }
