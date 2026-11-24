@@ -4,8 +4,8 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Scanner;
-import java.util.function.Function;
 
 /**
  * Swing GUI starter for the to-do list tracker.
@@ -101,15 +101,15 @@ public class TodoGui extends JFrame {
         buttons.add(new JLabel("   Sort by:"));
 
         JButton byDifficulty = new JButton("Difficulty");
-        byDifficulty.addActionListener(e -> sortBy(Task::getDifficulty, "difficulty"));
+        byDifficulty.addActionListener(e -> sortBy(new TaskComparators.ByDifficulty(), "difficulty"));
         buttons.add(byDifficulty);
 
         JButton byCompleted = new JButton("Completed");
-        byCompleted.addActionListener(e -> sortBy(Task::getCompleted, "completed"));
+        byCompleted.addActionListener(e -> sortBy(new TaskComparators.ByCompleted(), "completed"));
         buttons.add(byCompleted);
 
         JButton byDueTime = new JButton("Due Time");
-        byDueTime.addActionListener(e -> sortBy(Task::getDueTime, "due time"));
+        byDueTime.addActionListener(e -> sortBy(new TaskComparators.ByDueTime(), "due time"));
         buttons.add(byDueTime);
 
         bottom.add(buttons, BorderLayout.CENTER);
@@ -195,7 +195,27 @@ public class TodoGui extends JFrame {
      */
     private void addTask() {
         // TODO
-        showError("addTask is not finished yet");
+        String description = descriptionField.getText().trim();
+        if (description.isEmpty()) {
+            showError("Description cannot be empty.");
+            return;
+        }
+        try {
+            Difficulty difficulty = new Difficulty((String) difficultyBox.getSelectedItem());
+            Completed completed = new Completed(completedBox.isSelected());
+            int month = (int) monthSpinner.getValue();
+            int day = (int) daySpinner.getValue();
+            int hour = (int) hourSpinner.getValue();
+            int minute = (int) minuteSpinner.getValue();
+            String amPm = (String) amPmBox.getSelectedItem();
+            DueTime due = new DueTime(month, day, hour, minute, amPm);
+
+            tasks.add(new Task(description, difficulty, completed, due));
+            descriptionField.setText("");
+            refreshTable();
+        } catch (IllegalArgumentException e) {
+            showError(e.getMessage());
+        }
     }
 
     /**
@@ -207,9 +227,16 @@ public class TodoGui extends JFrame {
      *   - Set the status label to say whether Sorts.isSortedBy(arr, key) is true,
      *     for example: "Sorted by difficulty: verified".
      */
-    private <K extends Comparable<K>> void sortBy(Function<Task, K> key, String propertyName) {
+    private void sortBy(Comparator<Task> c, String propertyName) {
         // TODO
-        showError("sortBy is not finished yet");
+        Task[] arr = tasks.toArray(new Task[0]);
+        Sorts.bubbleSort(arr, c);
+        tasks.clear();
+        for (Task t : arr) {
+            tasks.add(t);
+        }
+        refreshTable();
+        showStatus("Sorted by " + propertyName + ": " + (Sorts.isSorted(arr, c) ? "verified" : "failed"));
     }
 
     /**
@@ -222,6 +249,15 @@ public class TodoGui extends JFrame {
      */
     private void refreshTable() {
         // TODO
+        tableModel.setRowCount(0);
+        for (Task t : tasks) {
+            tableModel.addRow(new Object[]{
+                    t.getDescription(),
+                    t.getDifficulty(),
+                    t.getCompleted(),
+                    t.getDueTime()
+            });
+        }
     }
 
     // ---------- Provided helpers ----------
